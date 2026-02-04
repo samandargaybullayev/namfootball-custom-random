@@ -2,33 +2,35 @@ import { useState, useCallback } from 'react'
 import { TEAMS } from '../constants/teams'
 
 const STORAGE_KEY = 'tournament-selected-teams'
+const RIGGED_KEY = 'tournament-is-rigged'
 
 // localStorage dan ma'lumotlarni yuklash
-const loadFromStorage = () => {
+const loadFromStorage = (key) => {
   try {
-    const saved = localStorage.getItem(STORAGE_KEY)
+    const saved = localStorage.getItem(key)
     if (saved) {
       return JSON.parse(saved)
     }
   } catch (error) {
-    console.error('localStorage dan yuklashda xatolik:', error)
+    console.error(`localStorage dan ${key} ni yuklashda xatolik:`, error)
   }
-  return {}
+  return null
 }
 
 // localStorage ga saqlash
-const saveToStorage = (selectedTeams) => {
+const saveToStorage = (key, value) => {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(selectedTeams))
+    localStorage.setItem(key, JSON.stringify(value))
   } catch (error) {
-    console.error('localStorage ga saqlashda xatolik:', error)
+    console.error(`localStorage ga ${key} ni saqlashda xatolik:`, error)
   }
 }
 
 export const useTournament = () => {
   // localStorage dan yuklash
-  const savedTeams = loadFromStorage()
-  
+  const savedTeams = loadFromStorage(STORAGE_KEY)
+  const savedIsRigged = loadFromStorage(RIGGED_KEY)
+
   // Tanlangan jamoalarni hisoblash
   const initialSelectedTeams = savedTeams || {}
   const initialAvailableTeams = TEAMS.filter(team => !Object.values(initialSelectedTeams).includes(team))
@@ -38,6 +40,7 @@ export const useTournament = () => {
   const [selectedTeams, setSelectedTeams] = useState(initialSelectedTeams)
   const [lockedSlots, setLockedSlots] = useState(initialLockedSlots)
   const [isAnyAnimating, setIsAnyAnimating] = useState(false)
+  const [isRigged, setIsRigged] = useState(savedIsRigged === true) // Default false, but respect saved true
 
   const selectTeam = useCallback((slotId, teamName) => {
     setSelectedTeams(prev => {
@@ -46,7 +49,7 @@ export const useTournament = () => {
         [slotId]: teamName
       }
       // localStorage ga saqlash
-      saveToStorage(newSelected)
+      saveToStorage(STORAGE_KEY, newSelected)
       return newSelected
     })
     setAvailableTeams(prev => prev.filter(team => team !== teamName))
@@ -78,8 +81,17 @@ export const useTournament = () => {
       setLockedSlots(new Set())
       // localStorage ni tozalash
       localStorage.removeItem(STORAGE_KEY)
+      // Note: We do NOT reset isRigged state here, it persists
       alert('Turnir muvaffaqiyatli qayta tiklandi!')
     }
+  }, [])
+
+  const toggleRiggedMode = useCallback(() => {
+    setIsRigged(prev => {
+      const newValue = !prev
+      saveToStorage(RIGGED_KEY, newValue)
+      return newValue
+    })
   }, [])
 
   return {
@@ -90,7 +102,9 @@ export const useTournament = () => {
     getAllSelectedTeams,
     resetTournament,
     isAnyAnimating,
-    setAnimating
+    setAnimating,
+    isRigged,
+    toggleRiggedMode
   }
 }
 

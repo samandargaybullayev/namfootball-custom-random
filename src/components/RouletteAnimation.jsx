@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { playStopSound } from '../utils/sounds'
 
-const RouletteAnimation = ({ teams, validTeams = null, onComplete, isActive = false, duration = 2000 }) => {
+const RouletteAnimation = ({ teams, validTeams = null, onComplete, isActive = false, duration = 2000, targetTeam = null }) => {
   const [scrollPosition, setScrollPosition] = useState(0)
   const [selectedTeam, setSelectedTeam] = useState(null)
   const [isAnimating, setIsAnimating] = useState(false)
@@ -35,8 +35,16 @@ const RouletteAnimation = ({ teams, validTeams = null, onComplete, isActive = fa
     // Agar validTeams berilgan bo'lsa, faqat validTeams dan tanlash
     // Aks holda teams dan tanlash
     const selectableTeams = validTeams && validTeams.length > 0 ? validTeams : teams
-    const randomTeamIndex = Math.floor(Math.random() * selectableTeams.length)
-    const selectedTeamName = selectableTeams[randomTeamIndex]
+
+    // Determine the result
+    let selectedTeamName
+    if (targetTeam) {
+      selectedTeamName = targetTeam
+    } else {
+      const randomTeamIndex = Math.floor(Math.random() * selectableTeams.length)
+      selectedTeamName = selectableTeams[randomTeamIndex]
+    }
+
     // Animatsiyada teams dan selectedTeamName ni topish
     const displayTeamIndex = teams.findIndex(team => team === selectedTeamName)
     const targetPosition = displayTeamIndex >= 0 ? displayTeamIndex * itemHeight : 0
@@ -50,11 +58,11 @@ const RouletteAnimation = ({ teams, validTeams = null, onComplete, isActive = fa
       if (progress < 1) {
         // Ease-out function: start fast, slow down gradually
         const easeOut = 1 - Math.pow(1 - progress, 3)
-        
+
         // Calculate scroll position with easing
         const currentPosition = finalPosition * easeOut
         setScrollPosition(currentPosition)
-        
+
         animationRef.current = requestAnimationFrame(animate)
       } else {
         // Stop at selected team - ensure we stop exactly
@@ -63,7 +71,7 @@ const RouletteAnimation = ({ teams, validTeams = null, onComplete, isActive = fa
         setIsAnimating(false)
         animationRef.current = null
         playStopSound() // Play stop sound
-        
+
         setTimeout(() => {
           if (onComplete) {
             onComplete(selectedTeamName)
@@ -102,40 +110,40 @@ const RouletteAnimation = ({ teams, validTeams = null, onComplete, isActive = fa
   const extendedTeams = [...teams, ...teams, ...teams, ...teams, ...teams]
 
   return (
-    <div 
+    <div
       className="relative w-full overflow-hidden"
       style={{ height: `${itemHeight}px` }}
     >
       {/* Left side indicator */}
-      <div 
+      <div
         className="absolute left-0 top-0 bottom-0 w-1 bg-neon-cyan z-10 shadow-neon opacity-80"
-        style={{ 
+        style={{
           background: 'linear-gradient(to bottom, transparent, #00F5FF, transparent)',
           width: '3px'
         }}
       />
-      
+
       {/* Right side indicator */}
-      <div 
+      <div
         className="absolute right-0 top-0 bottom-0 w-1 bg-neon-cyan z-10 shadow-neon opacity-80"
-        style={{ 
+        style={{
           background: 'linear-gradient(to bottom, transparent, #00F5FF, transparent)',
           width: '3px'
         }}
       />
-      
+
       {/* Top indicator */}
-      <div 
+      <div
         className="absolute left-0 right-0 h-0.5 bg-neon-cyan z-10 shadow-neon"
         style={{ top: 0 }}
       />
-      
+
       {/* Bottom indicator */}
-      <div 
+      <div
         className="absolute left-0 right-0 h-0.5 bg-neon-cyan z-10 shadow-neon"
         style={{ bottom: 0 }}
       />
-      
+
       {/* Scrollable team list */}
       <motion.div
         animate={{
@@ -152,7 +160,7 @@ const RouletteAnimation = ({ teams, validTeams = null, onComplete, isActive = fa
           <div
             key={`${team}-${index}`}
             className="flex items-center justify-center w-full"
-            style={{ 
+            style={{
               height: `${itemHeight}px`,
               opacity: selectedTeam && team === selectedTeam && index === Math.floor(scrollPosition / itemHeight) ? 1 : 0.8
             }}

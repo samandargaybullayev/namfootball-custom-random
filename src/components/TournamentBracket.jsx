@@ -1,7 +1,7 @@
 import { useTournament } from '../hooks/useTournament'
 import TeamSlot from './TeamSlot'
 import cupImage from '../assets/cup.png'
-import { GROUP1_TEAMS, GROUP2_TEAMS, GROUP3_TEAMS, GROUP4_TEAMS, TEAMS } from '../constants/teams'
+import { GROUP1_TEAMS, GROUP2_TEAMS, GROUP3_TEAMS, GROUP4_TEAMS, TEAMS, RIGGED_MATCHUPS } from '../constants/teams'
 import { useRef, useCallback } from 'react'
 
 const TournamentBracket = () => {
@@ -12,7 +12,10 @@ const TournamentBracket = () => {
     getSelectedTeam,
     getAllSelectedTeams,
     isAnyAnimating,
-    setAnimating
+    setAnimating,
+    resetTournament,
+    isRigged,
+    toggleRiggedMode
   } = useTournament()
 
   const handleTeamSelect = (slotId, teamName) => {
@@ -58,7 +61,7 @@ const TournamentBracket = () => {
         }
       }
     }
-    
+
     // Boshqa guruhlar uchun barcha mavjud jamoalar
     return availableTeams
   }
@@ -91,10 +94,10 @@ const TournamentBracket = () => {
   const renderGroup8 = (slots, groupKey, enableRoulette = false) => {
     const smallGap = 12 // Kichik gap (2x kamaytirildi: 24px -> 12px)
     const largeGap = 40 // Har 2 slotdan keyin katta masofa (2x kamaytirildi: 80px -> 40px)
-    
+
     return (
-      <div 
-        key={groupKey} 
+      <div
+        key={groupKey}
         className="flex flex-col items-center justify-center w-full max-w-xs"
       >
         {slots.map((slotId, index) => {
@@ -109,10 +112,13 @@ const TournamentBracket = () => {
             // 1, 3, 5, 7 slotlar - kichik masofa
             marginTop = smallGap
           }
-          
+
+          // Determine target team if rigged
+          const targetTeam = isRigged ? RIGGED_MATCHUPS[slotId] : null
+
           return (
-            <div 
-              key={slotId} 
+            <div
+              key={slotId}
               className="w-full relative"
               style={{ marginTop: `${marginTop}px` }}
             >
@@ -127,10 +133,11 @@ const TournamentBracket = () => {
                 isAnyAnimating={isAnyAnimating}
                 setAnimating={setAnimating}
                 enableRoulette={enableRoulette}
+                targetTeam={targetTeam}
               />
               {/* O'ng tarafga 30px chiziq - tugmadan tashqariga - faqat 8 talik guruh 1 uchun */}
               {groupKey === 'group8' && (
-                <div 
+                <div
                   className="absolute top-1/2"
                   style={{
                     left: '100%',
@@ -143,7 +150,7 @@ const TournamentBracket = () => {
               )}
               {/* Chap tarafga 30px chiziq - tugmadan tashqariga - faqat 8 talik guruh 2 uchun */}
               {groupKey === 'group8-rev' && (
-                <div 
+                <div
                   className="absolute top-1/2"
                   style={{
                     right: '100%',
@@ -164,7 +171,7 @@ const TournamentBracket = () => {
               {index % 2 === 0 && (
                 <>
                   {/* Vertikal chiziq - juft slotlarni birlashtiradi (1-2, 3-4, 5-6, 7-8) */}
-                  <div 
+                  <div
                     className="absolute"
                     style={{
                       [groupKey === 'group8' ? 'left' : 'right']: 'calc(100% + 30px)',
@@ -176,7 +183,7 @@ const TournamentBracket = () => {
                   />
                   {/* Vertikal chiziq markazidan gorizontal chiziq (150px) */}
                   {/* Vertikal chiziq: top=50%, height=92px, oxiri=50%+92px, markazi=50%+46px */}
-                  <div 
+                  <div
                     className="absolute"
                     style={{
                       [groupKey === 'group8' ? 'left' : 'right']: `calc(100% + 30px + 2px)`, // Vertikal chiziqdan keyin
@@ -192,7 +199,7 @@ const TournamentBracket = () => {
               {/* 1-2 va 3-4 juft slotlar uchun gorizontal chiziqlardan vertikal birlashtiruvchi chiziq */}
               {index === 0 && (
                 <>
-                  <div 
+                  <div
                     className="absolute"
                     style={{
                       [groupKey === 'group8' ? 'left' : 'right']: `calc(100% + 30px + 2px + 150px)`, // Gorizontal chiziq oxiridan
@@ -203,7 +210,7 @@ const TournamentBracket = () => {
                     }}
                   />
                   {/* Birinchi vertikal chiziq markazidan gorizontal chiziq */}
-                  <div 
+                  <div
                     className="absolute"
                     style={{
                       [groupKey === 'group8' ? 'left' : 'right']: `calc(100% + 30px + 2px + 150px + 2px)`, // Vertikal chiziqdan keyin
@@ -215,7 +222,7 @@ const TournamentBracket = () => {
                     }}
                   />
                   {/* 1-2 va 3-4 juft slotlar gorizontal chiziqlarini birlashtiruvchi bitta uzun vertikal chiziq */}
-                  <div 
+                  <div
                     className="absolute"
                     style={{
                       [groupKey === 'group8' ? 'left' : 'right']: `calc(100% + 30px + 2px + 150px + 2px + 150px)`, // Gorizontal chiziq oxiridan
@@ -226,7 +233,7 @@ const TournamentBracket = () => {
                     }}
                   />
                   {/* Uzun vertikal chiziq markazidan gorizontal chiziq */}
-                  <div 
+                  <div
                     className="absolute"
                     style={{
                       [groupKey === 'group8' ? 'left' : 'right']: `calc(100% + 30px + 2px + 150px + 2px + 150px + 2px)`, // Vertikal chiziqdan keyin
@@ -241,7 +248,7 @@ const TournamentBracket = () => {
               )}
               {index === 2 && (
                 <>
-                  <div 
+                  <div
                     className="absolute"
                     style={{
                       [groupKey === 'group8' ? 'left' : 'right']: `calc(100% + 30px + 2px + 150px)`, // Gorizontal chiziq oxiridan
@@ -252,7 +259,7 @@ const TournamentBracket = () => {
                     }}
                   />
                   {/* Ikkinchi vertikal chiziq markazidan gorizontal chiziq */}
-                  <div 
+                  <div
                     className="absolute"
                     style={{
                       [groupKey === 'group8' ? 'left' : 'right']: `calc(100% + 30px + 2px + 150px + 2px)`, // Vertikal chiziqdan keyin
@@ -281,10 +288,10 @@ const TournamentBracket = () => {
     // 4 talik guruh 8 talik guruhdan oshmasligi uchun max-height
     const maxHeight = 750 // 8 talik guruhdan oshmasligi uchun maksimal balandlik
     const greenYellowGradient = 'linear-gradient(to bottom, rgba(34, 197, 94, 0.9), rgba(250, 204, 21, 0.9))'
-    
+
     return (
-      <div 
-        key={groupKey} 
+      <div
+        key={groupKey}
         className="flex flex-col items-center justify-center w-full max-w-[200px]"
         style={{
           paddingTop: `${gapHalf}px`,
@@ -296,8 +303,8 @@ const TournamentBracket = () => {
         }}
       >
         {slots.map((slotId, index) => (
-          <div 
-            key={slotId} 
+          <div
+            key={slotId}
             className="w-full"
             style={{
               marginTop: index === 0 ? 0 : `${gap}px` // Barcha oraliqlar bir xil
@@ -328,10 +335,10 @@ const TournamentBracket = () => {
     // 8 talik guruh balandligi: 8 slot (80px har biri) + 7 gap (12px har biri) ≈ 724px
     // 2 talik guruh 8 talik guruhdan oshmasligi uchun max-height
     const maxHeight = 750 // 8 talik guruhdan oshmasligi uchun maksimal balandlik
-    
+
     return (
-      <div 
-        key={groupKey} 
+      <div
+        key={groupKey}
         className="flex flex-col items-center justify-center w-full max-w-[200px]"
         style={{
           paddingTop: `${gap}px`, // Yuqori padding gap bilan bir xil
@@ -341,8 +348,8 @@ const TournamentBracket = () => {
         }}
       >
         {slots.map((slotId, index) => (
-          <div 
-            key={slotId} 
+          <div
+            key={slotId}
             className="w-full"
             style={{
               marginTop: index === 0 ? 0 : `${gap}px` // Barcha oraliqlar bir xil
@@ -370,10 +377,10 @@ const TournamentBracket = () => {
     const gap = 840 // Yuqori va pastki padding
     const maxHeight = 750 // 8 talik guruhdan oshmasligi uchun maksimal balandlik
     const greenYellowGradient = 'linear-gradient(to bottom, rgba(34, 197, 94, 0.9), rgba(250, 204, 21, 0.9))'
-    
+
     return (
-      <div 
-        key={groupKey} 
+      <div
+        key={groupKey}
         className="flex flex-col items-center justify-center w-full max-w-[200px]"
         style={{
           paddingTop: `${gap}px`,
@@ -418,7 +425,7 @@ const TournamentBracket = () => {
 
       // PDF export uchun container element
       const bracketContainer = bracketRef.current || document.querySelector('.bracket-container') || document.body
-      
+
       // PDF export sozlamalari
       const opt = {
         margin: 0.5,
@@ -442,7 +449,7 @@ const TournamentBracket = () => {
     <div ref={bracketRef} className="bracket-container h-screen w-screen flex flex-col items-center justify-center p-4 overflow-hidden relative">
       {/* Header - Center Top */}
       <div className="absolute top-0 left-0 right-0 text-center pt-4 pb-4 z-10">
-        <h1 
+        <h1
           className="text-4xl md:text-6xl lg:text-7xl font-bold mb-2"
           style={{
             background: 'linear-gradient(to right, rgb(34, 197, 94), rgb(250, 204, 21), rgb(34, 197, 94))',
@@ -458,46 +465,70 @@ const TournamentBracket = () => {
         </p>
       </div>
 
+      {/* Reset/Refresh Button - Top Right */}
+      <div className="absolute top-4 right-4 z-50">
+        <button
+          onClick={resetTournament}
+          className="p-2 bg-purple-900/50 hover:bg-purple-800/80 rounded-full transition-all duration-300 text-purple-300 hover:text-white border border-purple-500/30 hover:shadow-glow"
+          title="Refresh Tournament"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+        </button>
+      </div>
+
       {/* Main container - groups in order: 8-2-1-1-2-8 (1 talik guruhlar o'chirildi, 4->2, 2->1) */}
       <div className="flex flex-row items-center justify-center w-full flex-1 px-0 gap-6 pt-24 md:pt-32">
         {/* 8 talik guruh - har 2 slotdan keyin masofa */}
         {renderGroup8(group8, 'group8', true)}
-        
+
         {/* 4 talik guruh -> 2 talik - birinchi gap maksimal, balandlik 8 talik guruhdan oshmasligi kerak */}
         <div style={{ marginLeft: '60px' }}>
           {renderGroup4(group4, 'group4', false)}
         </div>
-        
+
         {/* 2 talik guruh -> 1 talik - chapga surilgan */}
         {renderGroup1(group2, 'group2', false, true)}
-        
-        {/* Cup o'rtada - barcha 16 jamoa tanlangandan keyin bosiladi */}
-        <div 
-          className="flex items-center justify-center flex-shrink-0 cursor-pointer transition-all duration-300"
-          style={{ 
-            pointerEvents: allTeamsSelected ? 'auto' : 'none',
+
+        {/* Cup o'rtada - Stealth Switcher Bu yerda */}
+        <div
+          className="flex items-center justify-center flex-shrink-0 cursor-pointer transition-all duration-300 relative z-50"
+          style={{
+            pointerEvents: 'auto', // Always interactable
             userSelect: 'none',
             opacity: 1,
+            // Visual feedback: Always Gold glow (Stealth)
             filter: 'drop-shadow(0 0 20px rgba(255, 215, 0, 0.8))'
           }}
-          onClick={handleExportToPDF}
+          onClick={() => {
+            if (allTeamsSelected) {
+              handleExportToPDF()
+            } else {
+              toggleRiggedMode()
+            }
+          }}
+          onContextMenu={(e) => {
+            e.preventDefault()
+            toggleRiggedMode()
+          }}
         >
-          <img 
-            src={cupImage} 
-            alt="Cup" 
-            className="w-24 h-24 md:w-32 md:h-32 object-contain transition-transform duration-300 hover:scale-110" 
-            style={{ pointerEvents: 'none', userSelect: 'none' }} 
+          <img
+            src={cupImage}
+            alt="Cup"
+            className="w-24 h-24 md:w-32 md:h-32 object-contain transition-transform duration-300 hover:scale-110"
+            style={{ pointerEvents: 'none', userSelect: 'none' }}
           />
         </div>
-        
+
         {/* 2 talik guruh (reverse) -> 1 talik - o'ngga surilgan */}
         {renderGroup1(Array.from({ length: 1 }, (_, i) => `slot-group2-rev-${i}`), 'group2-rev', false, false)}
-        
+
         {/* 4 talik guruh (reverse) -> 2 talik - birinchi gap maksimal, balandlik 8 talik guruhdan oshmasligi kerak */}
         <div style={{ marginRight: '60px' }}>
           {renderGroup4(Array.from({ length: 2 }, (_, i) => `slot-group4-rev-${i}`), 'group4-rev', false)}
         </div>
-        
+
         {/* 8 talik guruh (reverse) - har 2 slotdan keyin masofa */}
         {renderGroup8(Array.from({ length: 8 }, (_, i) => `slot-group8-rev-${i}`), 'group8-rev', true)}
       </div>
