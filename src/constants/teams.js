@@ -1,30 +1,30 @@
 // Jamoalar 4 ta guruhga bo'lingan
 export const GROUP1_TEAMS = [
-  "FC Turan",
-  "FC Ziyokor",
-  "FC Zenix",
-  "FC Adim"
-];
-
-export const GROUP2_TEAMS = [
-  "FC Kosonsoy",
-  "FC Chin Tech",
-  "Mobil Savdo",
+  "Usta Tom Markazi",
+  "Nam Lider",
+  "Partsezd",
   "Mubashshir Avto"
 ];
 
+export const GROUP2_TEAMS = [
+  "Rayxon Cafe",
+  "Hoji Ota Mebellari",
+  "FC Kosonsoy",
+  "Marjon Iplari"
+];
+
 export const GROUP3_TEAMS = [
-  "Usta Tom Markazi",
-  "FC Marjon",
-  "Allwood",
-  "FC Partsezd"
+  "FC Elegant",
+  "Zarbdor City",
+  "Al Bilal Mebel",
+  "Bozorcha city"
 ];
 
 export const GROUP4_TEAMS = [
-  "FC Favorit",
-  "Seven Boys",
-  "FC Elite",
-  "FC Xonabod"
+  "Al-Mashriq",
+  "FC Umid",
+  "Rayxon Savdo",
+  "FC G'uncha"
 ];
 
 // Barcha jamoalar
@@ -38,24 +38,22 @@ export const TEAMS = [
 // Rigged matchups map: slotId -> TeamName
 export const RIGGED_MATCHUPS = {
   // Left Side
-  'slot-group8-0': 'FC Turan',
-  'slot-group8-1': 'Usta Tom Markazi',
-  'slot-group8-2': 'FC Ziyokor',
-  'slot-group8-3': 'FC Marjon',
-  'slot-group8-4': 'FC Zenix',
-  'slot-group8-5': 'Allwood',
-  'slot-group8-6': 'FC Adim',
-  'slot-group8-7': 'FC Partsezd',
+  'slot-group8-0': 'Usta Tom Markazi',
+  'slot-group8-1': 'FC Elegant',
+  'slot-group8-2': 'Nam Lider',
+  'slot-group8-3': 'Zarbdor City',
+  'slot-group8-4': 'Partsezd',
+  'slot-group8-5': 'Al Bilal Mebel',
+  'slot-group8-6': 'Mubashshir Avto',
+  'slot-group8-7': 'Bozorcha city',
 
   // Right Side
-  'slot-group8-rev-0': 'FC Kosonsoy',
-  'slot-group8-rev-1': 'FC Favorit',
-  'slot-group8-rev-2': 'FC Chin Tech',
-  'slot-group8-rev-3': 'Seven Boys',
-  'slot-group8-rev-4': 'Mobil Savdo',
-  'slot-group8-rev-5': 'FC Elite',
-  'slot-group8-rev-6': 'Mubashshir Avto',
-  'slot-group8-rev-7': 'FC Xonabod'
+  'slot-group8-rev-0': 'Rayxon Cafe',
+  'slot-group8-rev-1': 'Al-Mashriq',
+  'slot-group8-rev-2': 'Hoji Ota Mebellari',
+  'slot-group8-rev-3': 'FC Umid',
+  'slot-group8-rev-4': 'FC Kosonsoy',
+  'slot-group8-rev-5': 'Rayxon Savdo',
+  'slot-group8-rev-6': 'Marjon Iplari',
+  'slot-group8-rev-7': "FC G'uncha"
 };
-
-
