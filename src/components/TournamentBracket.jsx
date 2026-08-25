@@ -1,99 +1,44 @@
 import { useTournament } from '../hooks/useTournament'
 import TeamSlot from './TeamSlot'
 import cupImage from '../assets/cup.png'
-import { GROUP1_TEAMS, GROUP2_TEAMS, GROUP3_TEAMS, GROUP4_TEAMS, TEAMS, RIGGED_MATCHUPS } from '../constants/teams'
+import { LEAGUES } from '../constants/teams'
 import { useRef, useCallback } from 'react'
 
 const TournamentBracket = () => {
   const {
+    activeLeagueId,
+    setLeague,
+    currentLeague,
     availableTeams,
     selectTeam,
     isSlotLocked,
     getSelectedTeam,
-    getAllSelectedTeams,
     isAnyAnimating,
     setAnimating,
     resetTournament,
     isRigged,
-    toggleRiggedMode
+    toggleRiggedMode,
+    getValidTeamsForSlot
   } = useTournament()
 
   const handleTeamSelect = (slotId, teamName) => {
     selectTeam(slotId, teamName)
   }
 
-  // Har bir slot uchun mos jamoalarni qaytaradi
-  // 
-  // 8.1 guruh (group8) indexlar:
-  //   Index 0,2,4,6: slot-group8-0/2/4/6 -> 1-guruh jamoalari (juft)
-  //   Index 1,3,5,7: slot-group8-1/3/5/7 -> 3-guruh jamoalari (toq)
-  //
-  // 8.2 guruh (group8-rev) indexlar:
-  //   Index 0,2,4,6: slot-group8-rev-0/2/4/6 -> 2-guruh jamoalari (juft)
-  //   Index 1,3,5,7: slot-group8-rev-1/3/5/7 -> 4-guruh jamoalari (toq)
-  // Animatsiyada ko'rsatiladigan jamoalar - barcha 16 jamoa
-  const getAnimationTeamsForSlot = (slotId, groupKey, index) => {
-    // Animatsiyada barcha 16 jamoa aylanadi (availableTeams ga qaramay)
-    return TEAMS
+  // Animatsiyada ko'rsatiladigan jamoalar - turnirning barcha 16 jamoasi
+  const getAnimationTeamsForSlot = () => {
+    return currentLeague.teams
   }
 
-  // Har bir slot uchun qaysi guruhdan jamoa tanlash mumkinligini tekshiradi
-  const getValidTeamsForSlot = (slotId, groupKey, index) => {
-    // 8 talik guruhlar uchun
-    if (slotId.startsWith('slot-group8-')) {
-      if (groupKey === 'group8') {
-        // 8.1 guruh
-        if (index % 2 === 0) {
-          // Juft raqamlar (0, 2, 4, 6) -> 1-guruh
-          return GROUP1_TEAMS.filter(team => availableTeams.includes(team))
-        } else {
-          // Toq raqamlar (1, 3, 5, 7) -> 3-guruh
-          return GROUP3_TEAMS.filter(team => availableTeams.includes(team))
-        }
-      } else if (groupKey === 'group8-rev') {
-        // 8.2 guruh
-        if (index % 2 === 0) {
-          // Juft raqamlar (0, 2, 4, 6) -> 2-guruh
-          return GROUP2_TEAMS.filter(team => availableTeams.includes(team))
-        } else {
-          // Toq raqamlar (1, 3, 5, 7) -> 4-guruh
-          return GROUP4_TEAMS.filter(team => availableTeams.includes(team))
-        }
-      }
-    }
-
-    // Boshqa guruhlar uchun barcha mavjud jamoalar
-    return availableTeams
-  }
-
-
-  // Create slot groups in order: 8-4-2-1-1-2-4-8 (changed: 8-2-1-1-2-8)
+  // Create slot groups
   const group8 = Array.from({ length: 8 }, (_, i) => `slot-group8-${i}`)
-  const group4 = Array.from({ length: 2 }, (_, i) => `slot-group4-${i}`) // 4 talik -> 2 talik
-  const group2 = Array.from({ length: 1 }, (_, i) => `slot-group2-${i}`) // 2 talik -> 1 talik
-
-  const renderSlotGroup = (slots, groupKey, enableRoulette = false, gapClass = 'gap-3') => (
-    <div key={groupKey} className={`flex flex-col items-center justify-center ${gapClass} w-full max-w-xs`}>
-      {slots.map((slotId, index) => (
-        <TeamSlot
-          key={slotId}
-          slotId={slotId}
-          availableTeams={availableTeams}
-          isLocked={isSlotLocked(slotId)}
-          selectedTeam={getSelectedTeam(slotId)}
-          onSelect={handleTeamSelect}
-          isAnyAnimating={isAnyAnimating}
-          setAnimating={setAnimating}
-          enableRoulette={enableRoulette}
-        />
-      ))}
-    </div>
-  )
+  const group4 = Array.from({ length: 2 }, (_, i) => `slot-group4-${i}`)
+  const group2 = Array.from({ length: 1 }, (_, i) => `slot-group2-${i}`)
 
   // 8 talik guruh uchun alohida render - har 2 slotdan keyin katta masofa
   const renderGroup8 = (slots, groupKey, enableRoulette = false) => {
-    const smallGap = 12 // Kichik gap (2x kamaytirildi: 24px -> 12px)
-    const largeGap = 40 // Har 2 slotdan keyin katta masofa (2x kamaytirildi: 80px -> 40px)
+    const smallGap = 12
+    const largeGap = 40
 
     return (
       <div
@@ -101,20 +46,18 @@ const TournamentBracket = () => {
         className="flex flex-col items-center justify-center w-full max-w-xs"
       >
         {slots.map((slotId, index) => {
-          // Har 2 slotdan keyin (index 2, 4, 6) katta masofa
           let marginTop = 0
           if (index === 0) {
             marginTop = 0
           } else if (index % 2 === 0 && index > 0) {
-            // 2, 4, 6 slotlar - katta masofa
             marginTop = largeGap
           } else {
-            // 1, 3, 5, 7 slotlar - kichik masofa
             marginTop = smallGap
           }
 
-          // Determine target team if rigged
-          const targetTeam = isRigged ? RIGGED_MATCHUPS[slotId] : null
+          // Target team if rigged mode is active
+          const targetTeam = isRigged ? currentLeague.riggedMatchups[slotId] : null
+          const validTeams = getValidTeamsForSlot(slotId)
 
           return (
             <div
@@ -124,9 +67,9 @@ const TournamentBracket = () => {
             >
               <TeamSlot
                 slotId={slotId}
-                availableTeams={getValidTeamsForSlot(slotId, groupKey, index)}
-                animationTeams={getAnimationTeamsForSlot(slotId, groupKey, index)}
-                validTeams={getValidTeamsForSlot(slotId, groupKey, index)}
+                availableTeams={validTeams}
+                animationTeams={getAnimationTeamsForSlot()}
+                validTeams={validTeams}
                 isLocked={isSlotLocked(slotId)}
                 selectedTeam={getSelectedTeam(slotId)}
                 onSelect={handleTeamSelect}
@@ -448,21 +391,54 @@ const TournamentBracket = () => {
   return (
     <div ref={bracketRef} className="bracket-container h-screen w-screen flex flex-col items-center justify-center p-4 overflow-hidden relative">
       {/* Header - Center Top */}
-      <div className="absolute top-0 left-0 right-0 text-center pt-4 pb-4 z-10">
-        <h1
-          className="text-4xl md:text-6xl lg:text-7xl font-bold mb-2"
-          style={{
-            background: 'linear-gradient(to right, rgb(34, 197, 94), rgb(250, 204, 21), rgb(34, 197, 94))',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            backgroundClip: 'text'
-          }}
-        >
-          NAMFOOTBALL
-        </h1>
-        <p className="text-xl md:text-2xl lg:text-3xl text-white uppercase">
-          HAVASKOR FUTBOLL LIGASI
-        </p>
+      <div className="absolute top-0 left-0 right-0 text-center pt-3 pb-2 z-20 pointer-events-none">
+        <div className="inline-block pointer-events-auto">
+          <h1
+            className="text-3xl md:text-5xl lg:text-6xl font-bold mb-1 cursor-default"
+            style={{
+              background: 'linear-gradient(to right, rgb(34, 197, 94), rgb(250, 204, 21), rgb(34, 197, 94))',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text'
+            }}
+          >
+            NAMFOOTBALL
+          </h1>
+          <p className="text-base md:text-xl font-bold text-white uppercase tracking-wider">
+            HAVASKOR FUTBOLL LIGASI
+          </p>
+
+          {/* League Selector Tabs */}
+          <div className="flex items-center justify-center gap-3 mt-2">
+            <button
+              onClick={() => setLeague('cl')}
+              className={`px-4 py-1.5 rounded-full font-bold text-xs md:text-sm transition-all duration-300 flex items-center gap-2 ${
+                activeLeagueId === 'cl'
+                  ? 'bg-gradient-to-r from-emerald-500 to-amber-400 text-slate-950 shadow-glow scale-105 ring-2 ring-emerald-300'
+                  : 'bg-purple-950/80 text-purple-200 hover:bg-purple-900/90 border border-purple-500/40'
+              }`}
+            >
+              <span>🏆</span>
+              <span>Chempionlar Ligasi</span>
+            </button>
+
+            <button
+              onClick={() => setLeague('el')}
+              className={`px-4 py-1.5 rounded-full font-bold text-xs md:text-sm transition-all duration-300 flex items-center gap-2 ${
+                activeLeagueId === 'el'
+                  ? 'bg-gradient-to-r from-blue-500 to-cyan-400 text-slate-950 shadow-glow scale-105 ring-2 ring-cyan-300'
+                  : 'bg-purple-950/80 text-purple-200 hover:bg-purple-900/90 border border-purple-500/40'
+              }`}
+            >
+              <span>⚽</span>
+              <span>Yevropa Ligasi</span>
+            </button>
+          </div>
+
+          <p className="text-xs md:text-sm font-semibold text-emerald-400 mt-1 tracking-wide">
+            ({currentLeague.subtitle})
+          </p>
+        </div>
       </div>
 
       {/* Reset/Refresh Button - Top Right */}
@@ -478,27 +454,26 @@ const TournamentBracket = () => {
         </button>
       </div>
 
-      {/* Main container - groups in order: 8-2-1-1-2-8 (1 talik guruhlar o'chirildi, 4->2, 2->1) */}
-      <div className="flex flex-row items-center justify-center w-full flex-1 px-0 gap-6 pt-24 md:pt-32">
+      {/* Main container - groups in order: 8-2-1-1-2-8 */}
+      <div className="flex flex-row items-center justify-center w-full flex-1 px-0 gap-6 pt-28 md:pt-36">
         {/* 8 talik guruh - har 2 slotdan keyin masofa */}
         {renderGroup8(group8, 'group8', true)}
 
-        {/* 4 talik guruh -> 2 talik - birinchi gap maksimal, balandlik 8 talik guruhdan oshmasligi kerak */}
+        {/* 4 talik guruh -> 2 talik */}
         <div style={{ marginLeft: '60px' }}>
           {renderGroup4(group4, 'group4', false)}
         </div>
 
-        {/* 2 talik guruh -> 1 talik - chapga surilgan */}
+        {/* 2 talik guruh -> 1 talik */}
         {renderGroup1(group2, 'group2', false, true)}
 
-        {/* Cup o'rtada - Stealth Switcher Bu yerda */}
+        {/* Cup o'rtada */}
         <div
           className="flex items-center justify-center flex-shrink-0 cursor-pointer transition-all duration-300 relative z-50"
           style={{
-            pointerEvents: 'auto', // Always interactable
+            pointerEvents: 'auto',
             userSelect: 'none',
             opacity: 1,
-            // Visual feedback: Always Gold glow (Stealth)
             filter: 'drop-shadow(0 0 20px rgba(255, 215, 0, 0.8))'
           }}
           onClick={() => {
@@ -521,24 +496,27 @@ const TournamentBracket = () => {
           />
         </div>
 
-        {/* 2 talik guruh (reverse) -> 1 talik - o'ngga surilgan */}
+        {/* 2 talik guruh (reverse) */}
         {renderGroup1(Array.from({ length: 1 }, (_, i) => `slot-group2-rev-${i}`), 'group2-rev', false, false)}
 
-        {/* 4 talik guruh (reverse) -> 2 talik - birinchi gap maksimal, balandlik 8 talik guruhdan oshmasligi kerak */}
+        {/* 4 talik guruh (reverse) */}
         <div style={{ marginRight: '60px' }}>
           {renderGroup4(Array.from({ length: 2 }, (_, i) => `slot-group4-rev-${i}`), 'group4-rev', false)}
         </div>
 
-        {/* 8 talik guruh (reverse) - har 2 slotdan keyin masofa */}
+        {/* 8 talik guruh (reverse) */}
         {renderGroup8(Array.from({ length: 8 }, (_, i) => `slot-group8-rev-${i}`), 'group8-rev', true)}
       </div>
 
       {/* Info footer */}
-      <div className="text-center text-purple-300 text-sm mt-4">
-        <p>Teams: {availableTeams.length} / 16</p>
+      <div className="text-center text-purple-300 text-xs md:text-sm mt-2 flex items-center justify-center gap-4">
+        <span>Turnir: <strong className="text-white">{currentLeague.name}</strong></span>
+        <span>•</span>
+        <span>Mavjud jamoalar: <strong className="text-white">{availableTeams.length} / 16</strong></span>
       </div>
     </div>
   )
 }
 
 export default TournamentBracket
+
